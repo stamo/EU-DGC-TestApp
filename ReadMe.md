@@ -5,4 +5,4 @@ The purpose of this application is to show the algorithm used for generating and
 
 Almost full workflow implemented except using downloaded from DGC Gateway public key for verification
 
-![DGC Workflow](Images/overview.png)
+![DGC Workflow](/Images/overview.png)
