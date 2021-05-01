@@ -26,6 +26,9 @@
     <None Update="Data\testData.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Data\vac-stamo-min.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Data\vac_stamo.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

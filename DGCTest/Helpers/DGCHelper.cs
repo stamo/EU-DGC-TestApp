@@ -1,9 +1,11 @@
 ﻿using DGCTest.Constants;
 using DGCTest.Models;
 using Ionic.Zlib;
+using Newtonsoft.Json.Linq;
 using PeterO.Cbor;
 using System;
 using System.IO;
+using System.Text;
 using ZXing.QrCode.Internal;
 
 namespace DGCTest.Helpers
@@ -51,7 +53,26 @@ namespace DGCTest.Helpers
 
             byte[] res = ZlibStream.CompressBuffer(cose.EncodeToBytes());
 
+            GenerateTestData(data, cbPayload, cose, res);
+
             return $"{HCVersion.HC1}:{Base45Encoding.Encode(res)}";
+        }
+
+        private static void GenerateTestData(string data, CBORObject cbPayload, CBORObject cose, byte[] res)
+        {
+            string base45enc = Base45Encoding.Encode(res);
+            JObject testData = new JObject();
+            testData.Add("JSON", data);
+            testData.Add("CBOR", Utils.ToHexString(cbPayload.EncodeToBytes()));
+            testData.Add("COSE", Utils.ToHexString(cose.EncodeToBytes()));
+            testData.Add("BASE45", base45enc);
+            testData.Add("PREFIX", $"{HCVersion.HC1}:{base45enc}");
+            testData.Add("EXPECTEDDECODE", true);
+            testData.Add("EXPECTEDVERIFY", true);
+
+            string dt = testData.ToString();
+
+            File.WriteAllText("test_vac.json", dt, Encoding.UTF8);
         }
 
         /// <summary>
