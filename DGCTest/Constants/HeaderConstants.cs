@@ -8,11 +8,11 @@
         /// <summary>
         /// Algorithm Field
         /// </summary>
-        public static string alg = "alg";
+        public static int alg = 1;
 
         /// <summary>
         /// Key Identifier
         /// </summary>
-        public static string kid = "kid";
+        public static int kid = 4;
     }
 }

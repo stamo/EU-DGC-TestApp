@@ -23,6 +23,11 @@ namespace DGCTest
             DGCValidationModel validationResult = DGCHelper.Validate(dgc);
 
             Console.WriteLine(JsonConvert.SerializeObject(validationResult, Formatting.Indented));
+
+            /* ---------- Testing with others MS data -------- */
+
+            // ToDo load MS test data from file
+            DGCHelper.TestMSData();
         }
     }
 }

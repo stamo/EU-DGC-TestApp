@@ -30,9 +30,11 @@ namespace DGCTest.Helpers
         /// <returns></returns>
         public static CBORObject GetSignature(CBORObject coseProtected, CBORObject cosePayload)
         {
-            CBORObject signObj = CBORObject.NewArray();
-            signObj.Add(coseProtected);
-            signObj.Add(cosePayload);
+            CBORObject signObj = CBORObject.NewArray()
+                .Add(SignatureContext.Signature1)
+                .Add(coseProtected)
+                .Add(new byte[0])
+                .Add(cosePayload);
 
             AsymmetricCipherKeyPair keyPair = GetKeyPair();
             byte[] signature = SignData(signObj.EncodeToBytes(), keyPair.Private);
@@ -92,11 +94,13 @@ namespace DGCTest.Helpers
         public static bool ValidateSignature(CBORObject cose)
         {
             CBORObject signData = CBORObject.NewArray()
+                .Add(SignatureContext.Signature1)
                 .Add(cose[0])
-                .Add(cose[1]);
+                .Add(new byte[0])
+                .Add(cose[2]);
 
             byte[] data = signData.EncodeToBytes();
-            byte[] signature = cose[2].GetByteString();
+            byte[] signature = cose[3].GetByteString();
 
             AsymmetricCipherKeyPair keyPair = GetKeyPair();
 
