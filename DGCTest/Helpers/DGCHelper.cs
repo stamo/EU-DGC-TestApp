@@ -131,16 +131,34 @@ namespace DGCTest.Helpers
             byte[] unzipped = ZlibStream.UncompressBuffer(data);
 
             CBORObject cose = CBORObject.DecodeFromBytes(unzipped);
+
+            if (cose.MostOuterTag.ToInt32Checked() != TagConstants.COSE_Sign1)
+            {
+                result.ErrorMessage = $"Invalid Tag. Only COSE {SignatureContext.Signature1} structures are supported";
+
+                return result;
+            }
+
             CBORObject header = CBORObject.DecodeFromBytes(cose[0].GetByteString());
+            CBORObject payload = CBORObject.DecodeFromBytes(cose[2].GetByteString());
+            long today = new DateTimeOffset(DateTime.Today).ToUnixTimeSeconds();
+
+            if (today < payload[ClaimConstants.iat].AsInt64Value() ||
+                today > payload[ClaimConstants.exp].AsInt64Value())
+            {
+                result.ErrorMessage = "Certificate has expired or not yet active.";
+
+                return result;
+            }
 
             result.IsValid = CryptoHelper.ValidateSignature(cose);
 
             if (result.IsValid == false)
             {
                 result.ErrorMessage = "Invalid Signature";
-            }
 
-            CBORObject payload = CBORObject.DecodeFromBytes(cose[2].GetByteString());
+                return result;
+            }
 
             result.Names = payload[ClaimConstants.hcert]["nam"].ToObject<Nam>();
             result.DateOfBirth = DateTime.Parse(payload[ClaimConstants.hcert]["dob"].AsString());
