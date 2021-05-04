@@ -38,7 +38,9 @@ namespace DGCTest.Helpers
             CBORObject cosePayload = CBORObject.FromObject(cbPayload.EncodeToBytes());
 
             CBORObject protectedMap = CBORObject.NewMap()
-                .Set(HeaderConstants.alg, CryptoAlgorithms.ES256)
+                .Set(HeaderConstants.alg, CryptoAlgorithms.ES256);
+
+            CBORObject unprotectedMap = CBORObject.NewMap()
                 .Set(HeaderConstants.kid, CryptoHelper.GetKeyIdentifier());
 
             CBORObject coseProtected = CBORObject.FromObject(protectedMap.EncodeToBytes());
@@ -47,7 +49,7 @@ namespace DGCTest.Helpers
 
             CBORObject cose = CBORObject.NewArray()
                 .Add(coseProtected)
-                .Add(new { })
+                .Add(unprotectedMap)
                 .Add(cosePayload)
                 .Add(signature)
                 .WithTag(TagConstants.COSE_Sign1);
