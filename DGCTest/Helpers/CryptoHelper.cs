@@ -38,6 +38,7 @@ namespace DGCTest.Helpers
 
             AsymmetricCipherKeyPair keyPair = GetKeyPair();
             byte[] signature = SignData(signObj.EncodeToBytes(), keyPair.Private);
+            signature = Utils.ConvertDerToConcat(signature, 32);
 
             return CBORObject.FromObject(signature);
         }
@@ -101,6 +102,7 @@ namespace DGCTest.Helpers
 
             byte[] data = signData.EncodeToBytes();
             byte[] signature = cose[3].GetByteString();
+            signature = Utils.ConvertConcatToDer(signature);
 
             AsymmetricCipherKeyPair keyPair = GetKeyPair();
 
