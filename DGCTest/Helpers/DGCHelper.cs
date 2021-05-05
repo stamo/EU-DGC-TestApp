@@ -29,11 +29,13 @@ namespace DGCTest.Helpers
 
 
             CBORObject cbHcert = CBORObject.FromJSONString(data);
+            CBORObject cbHcertMap = CBORObject.NewMap()
+                .Set(ClaimConstants.hcertData, cbHcert);
             CBORObject cbPayload = CBORObject.NewMap()
                 .Set(ClaimConstants.iss, "BG")
                 .Set(ClaimConstants.iat, oValidFrom.ToUnixTimeSeconds())
                 .Set(ClaimConstants.exp, oValidTill.ToUnixTimeSeconds())
-                .Set(ClaimConstants.hcert, cbHcert);
+                .Set(ClaimConstants.hcert, cbHcertMap);
 
             CBORObject cosePayload = CBORObject.FromObject(cbPayload.EncodeToBytes());
 
@@ -162,8 +164,8 @@ namespace DGCTest.Helpers
                 return result;
             }
 
-            result.Names = payload[ClaimConstants.hcert]["nam"].ToObject<Nam>();
-            result.DateOfBirth = DateTime.Parse(payload[ClaimConstants.hcert]["dob"].AsString());
+            result.Names = payload[ClaimConstants.hcert][ClaimConstants.hcertData]["nam"].ToObject<Nam>();
+            result.DateOfBirth = DateTime.Parse(payload[ClaimConstants.hcert][ClaimConstants.hcertData]["dob"].AsString());
 
             return result;
         }

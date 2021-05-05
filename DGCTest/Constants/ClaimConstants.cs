@@ -24,5 +24,10 @@
         /// Payload of the DGC
         /// </summary>
         public static int hcert = -260;
+
+        /// <summary>
+        /// DGC data must be in MAP with key 1
+        /// </summary>
+        public static int hcertData = 1;
     }
 }
