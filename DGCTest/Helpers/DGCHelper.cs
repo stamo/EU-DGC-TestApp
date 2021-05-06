@@ -58,7 +58,7 @@ namespace DGCTest.Helpers
 
             byte[] res = ZlibStream.CompressBuffer(cose.EncodeToBytes());
 
-            GenerateTestData(data, cbPayload, cose, res);
+            GenerateTestData(data, cbHcert, cose, res);
 
             return $"{HCVersion.HC1}:{Base45Encoding.Encode(res)}";
         }
@@ -77,17 +77,18 @@ namespace DGCTest.Helpers
             CBORObject obPayload = CBORObject.DecodeFromBytes(obCose[2].GetByteString());
         }
 
-        private static void GenerateTestData(string data, CBORObject cbPayload, CBORObject cose, byte[] res)
+        private static void GenerateTestData(string data, CBORObject cbHcert, CBORObject cose, byte[] res)
         {
             string base45enc = Base45Encoding.Encode(res);
             JObject testData = new JObject();
             testData.Add("JSON", data);
-            testData.Add("CBOR", Utils.ToHexString(cbPayload.EncodeToBytes()));
+            testData.Add("CBOR", Utils.ToHexString(cbHcert.EncodeToBytes()));
             testData.Add("COSE", Utils.ToHexString(cose.EncodeToBytes()));
             testData.Add("BASE45", base45enc);
             testData.Add("PREFIX", $"{HCVersion.HC1}:{base45enc}");
             testData.Add("EXPECTEDDECODE", true);
             testData.Add("EXPECTEDVERIFY", true);
+            testData.Add("VALIDATIONCLOCK", DateTime.UtcNow);
 
             string dt = testData.ToString();
 
