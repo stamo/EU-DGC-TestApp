@@ -92,7 +92,7 @@ namespace DGCTest.Helpers
         /// </summary>
         /// <param name="cose">COSE object</param>
         /// <returns></returns>
-        public static bool ValidateSignature(CBORObject cose)
+        public static bool ValidateSignature(CBORObject cose, byte[]  cert)
         {
             CBORObject signData = CBORObject.NewArray()
                 .Add(SignatureContext.Signature1)
@@ -102,12 +102,32 @@ namespace DGCTest.Helpers
 
             byte[] data = signData.EncodeToBytes();
             byte[] signature = cose[3].GetByteString();
-            signature = Utils.ConvertConcatToDer(signature);
 
-            AsymmetricCipherKeyPair keyPair = GetKeyPair();
+            CBORObject header = CBORObject.DecodeFromBytes(cose[0].GetByteString());
+            string algorithm = CryptoAlgorithms.RSA256;
 
-            ISigner signer = SignerUtilities.GetSigner(CryptoAlgorithms.ECDSA256);
-            signer.Init(false, keyPair.Public);
+            if (header[HeaderConstants.alg].AsInt32() == -7)
+            {
+                algorithm = CryptoAlgorithms.ECDSA256;
+                signature = Utils.ConvertConcatToDer(signature);
+            }
+            
+            AsymmetricKeyParameter publicKey;
+
+            if (cert == null)
+            {
+                AsymmetricCipherKeyPair keyPair = GetKeyPair();
+                publicKey = keyPair.Public;
+            }
+            else
+            {
+                publicKey = GetPublicKey(cert);
+            }
+
+            
+
+            ISigner signer = SignerUtilities.GetSigner(algorithm);
+            signer.Init(false, publicKey);
             signer.BlockUpdate(data, 0, data.Length);
             return signer.VerifySignature(signature);
         }
@@ -169,6 +189,14 @@ namespace DGCTest.Helpers
         static byte[] SignDigest(byte[] digest)
         {
             throw new NotImplementedException();
+        }
+
+        static AsymmetricKeyParameter GetPublicKey(byte[] cert)
+        {
+            X509CertificateParser certParser = new X509CertificateParser();
+            Org.BouncyCastle.X509.X509Certificate certificate = certParser.ReadCertificate(cert);
+
+            return certificate.GetPublicKey();
         }
     }
 }

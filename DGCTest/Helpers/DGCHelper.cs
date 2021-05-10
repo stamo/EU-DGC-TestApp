@@ -1,10 +1,12 @@
 ﻿using DGCTest.Constants;
 using DGCTest.Models;
 using Ionic.Zlib;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PeterO.Cbor;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ZXing.QrCode.Internal;
 
@@ -65,16 +67,24 @@ namespace DGCTest.Helpers
 
         public static void TestMSData()
         {
-            string stCbor = "a4041a608fa985061a608d068501624154390103a101a4617682aa62646e01626d616d4f52472d313030303330323135627670674a3037425830336264746a323032312d30322d313662636f624247626369782175726e3a757663693a31303a42473a3350334b364635474c5734364c525a542348626d706c45552f312f32302f31353238626973724d696e6973747279206f66204865616c74686273640262746769383430353339303036aa62646e02626d616d4f52472d313030303330323135627670674a3037425830336264746a323032312d30332d303962636f624247626369782175726e3a757663693a31303a42473a3350334b364635474c5734364c525a542348626d706c45552f312f32302f31353238626973724d696e6973747279206f66204865616c74686273640262746769383430353339303036636e616da463666e74665045544b4f5662666e6cd09fd095d0a2d09ad09ed09263676e746e5354414d4f3c47454f524749455662676e781bd0a1d0a2d090d09cd09e20d093d095d09ed0a0d093d098d095d0926376657265312e302e3063646f626a313937382d30312d3236";
-            byte[] baCbor = Utils.StringToByteArray(stCbor);
-            CBORObject obCbor = CBORObject.DecodeFromBytes(baCbor);
+            DirectoryInfo testDir = new DirectoryInfo("TestData");
+            Console.WriteLine("------- Start of MS DGC validation ---------");
 
-            string stCose = "d2844da2044859339762b612e3ba0126a05901aaa4041a608fa985061a608d068501624154390103a101a4617682aa62646e01626d616d4f52472d313030303330323135627670674a3037425830336264746a323032312d30322d313662636f624247626369782175726e3a757663693a31303a42473a3350334b364635474c5734364c525a542348626d706c45552f312f32302f31353238626973724d696e6973747279206f66204865616c74686273640262746769383430353339303036aa62646e02626d616d4f52472d313030303330323135627670674a3037425830336264746a323032312d30332d303962636f624247626369782175726e3a757663693a31303a42473a3350334b364635474c5734364c525a542348626d706c45552f312f32302f31353238626973724d696e6973747279206f66204865616c74686273640262746769383430353339303036636e616da463666e74665045544b4f5662666e6cd09fd095d0a2d09ad09ed09263676e746e5354414d4f3c47454f524749455662676e781bd0a1d0a2d090d09cd09e20d093d095d09ed0a0d093d098d095d0926376657265312e302e3063646f626a313937382d30312d3236584052e086c4f600592419795b7eca6404d20b5c41e787fabed2f86cdf7f74abb62574f496f6580afafe62e4ad1c8fbfd4e9c146dafb28c372530c5f9f736ade2707";
-            byte[] baCose = Utils.StringToByteArray(stCose);
-            CBORObject obCose = CBORObject.DecodeFromBytes(baCose);
+            foreach (var file in testDir.EnumerateFiles())
+            {
+                Console.WriteLine($"{file.Name} - Start");
 
-            CBORObject obProtected = CBORObject.DecodeFromBytes(obCose[0].GetByteString());
-            CBORObject obPayload = CBORObject.DecodeFromBytes(obCose[2].GetByteString());
+                string data = File.ReadAllText(file.FullName);
+                JObject jsonData = JObject.Parse(data);
+
+                string prefix = jsonData.Value<string>("PREFIX");
+                string certificate = (string)jsonData["TESTCTX"]["CERTIFICATE"];
+
+                DGCValidationModel validationResult = DGCHelper.Validate(prefix, Convert.FromBase64String(certificate));
+
+                Console.WriteLine(JsonConvert.SerializeObject(validationResult, Formatting.Indented));
+                Console.WriteLine($"{file.Name} - End");
+            }
         }
 
         private static void GenerateTestData(string data, CBORObject cbHcert, CBORObject cose, byte[] res)
@@ -120,7 +130,7 @@ namespace DGCTest.Helpers
         /// </summary>
         /// <param name="dgc">Digital Green Certificate to be validated</param>
         /// <returns>Validated data</returns>
-        public static DGCValidationModel Validate(string dgc)
+        public static DGCValidationModel Validate(string dgc, byte[] cert = null)
         {
             DGCValidationModel result = new DGCValidationModel() { IsValid = false };
             string prefix = $"{HCVersion.HC1}:";
@@ -148,21 +158,21 @@ namespace DGCTest.Helpers
             CBORObject payload = CBORObject.DecodeFromBytes(cose[2].GetByteString());
             long today = new DateTimeOffset(DateTime.Today).ToUnixTimeSeconds();
 
-            if (today < payload[ClaimConstants.iat].AsInt64Value() ||
-                today > payload[ClaimConstants.exp].AsInt64Value())
-            {
-                result.ErrorMessage = "Certificate has expired or not yet active.";
+            //if (today < payload[ClaimConstants.iat]?.AsInt64Value() ||
+            //    today > payload[ClaimConstants.exp]?.AsInt64Value())
+            //{
+            //    result.ErrorMessage += "Certificate has expired or not yet active.";
 
-                return result;
-            }
+            //    //return result;
+            //}
 
-            result.IsValid = CryptoHelper.ValidateSignature(cose);
+            result.IsValid = CryptoHelper.ValidateSignature(cose, cert);
 
             if (result.IsValid == false)
             {
-                result.ErrorMessage = "Invalid Signature";
+                result.ErrorMessage += "Invalid Signature";
 
-                return result;
+                //return result;
             }
 
             result.Names = payload[ClaimConstants.hcert][ClaimConstants.hcertData]["nam"].ToObject<Nam>();
